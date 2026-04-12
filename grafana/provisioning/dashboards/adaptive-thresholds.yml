@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Adaptive Thresholds
+    orgId: 1
+    folder: "Adaptive Thresholds"
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards/adaptive-thresholds

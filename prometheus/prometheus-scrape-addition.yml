@@ -1,0 +1,5 @@
+  - job_name: 'adaptive-threshold-engine'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['adaptive-threshold-engine:8080']
+    scrape_interval: 15s

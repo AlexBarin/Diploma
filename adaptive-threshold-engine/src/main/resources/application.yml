@@ -1,0 +1,174 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: adaptive-threshold-engine
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:5432/${DB_NAME:metriclab}
+    username: ${DB_USER:lab}
+    password: ${DB_PASS:lab}
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+threshold-engine:
+  prometheus:
+    url: ${THRESHOLD_ENGINE_PROMETHEUS_URL:http://prometheus:9090}
+    query-step: 15s
+    history-window: 2h
+    discovery:
+      mode: explicit
+      exclude-jobs:
+        - "predictive-module"
+
+      include-metrics:
+        metric-lab-app:
+          - lab_http_request_duration_seconds_sum
+          - lab_http_request_duration_seconds_count
+          - lab_http_requests_total
+          - lab_active_sessions
+          - lab_db_operation_duration_seconds_sum
+          - lab_db_operation_duration_seconds_count
+          - lab_cart_items_total
+          - lab_orders_pending_total
+          - lab_checkout_value_rubles_sum
+          - lab_checkout_value_rubles_count
+          - lab_cache_requests_total
+          - lab_error_injection_ratio
+          - lab_queue_depth
+
+        metric-lab-worker:
+          - lab_worker_jobs_total
+          - lab_worker_job_duration_seconds_sum
+          - lab_worker_job_duration_seconds_count
+          - lab_worker_backpressure_ratio
+          - lab_queue_depth
+          - lab_orders_pending_total
+
+        redis:
+          - redis_memory_used_bytes
+          - redis_connected_clients
+          - redis_blocked_clients
+          - redis_commands_processed_total
+          - redis_keyspace_hits_total
+          - redis_keyspace_misses_total
+          - redis_evicted_keys_total
+          - redis_db_keys
+          - redis_net_input_bytes_total
+          - redis_net_output_bytes_total
+          - redis_cpu_sys_seconds_total
+          - redis_cpu_user_seconds_total
+
+        postgres:
+          - pg_database_size_bytes
+          - pg_stat_database_xact_commit
+          - pg_stat_database_xact_rollback
+          - pg_stat_database_tup_fetched
+          - pg_stat_database_tup_inserted
+          - pg_stat_database_tup_updated
+          - pg_stat_database_tup_deleted
+          - pg_stat_database_deadlocks
+          - pg_stat_database_numbackends
+          - pg_stat_activity_count
+          - pg_locks_count
+          - pg_stat_database_blks_hit
+          - pg_stat_database_blks_read
+
+        metric-lab-host:
+          - metric_lab_host_cpu_usage_percent
+          - metric_lab_host_memory_usage_ratio
+          - metric_lab_host_memory_used_bytes
+          - metric_lab_host_disk_read_bytes_per_second
+          - metric_lab_host_disk_write_bytes_per_second
+          - metric_lab_container_cpu_usage_percent
+          - metric_lab_container_memory_usage_bytes
+          - metric_lab_container_memory_usage_ratio
+          - metric_lab_postgres_volume_usage_ratio
+
+        prometheus:
+          - prometheus_tsdb_head_series
+          - prometheus_engine_queries
+          - prometheus_tsdb_storage_blocks_bytes
+
+  defaults:
+    algorithm: auto
+    sensitivity: 3.0
+    ema-alpha: 0.1
+    window-size: 1h
+    recompute-interval: 30s
+    recompute-interval-ms: 30000
+    min-data-points: 100
+
+  grafana:
+    url: ${THRESHOLD_ENGINE_GRAFANA_URL:http://grafana:3000}
+    username: admin
+    password: admin
+
+  metrics:
+    "lab_http_request_duration_seconds_sum":
+      algorithm: robust-quantile
+      sensitivity: 2.0
+    "lab_db_operation_duration_seconds_sum":
+      algorithm: robust-quantile
+      sensitivity: 2.0
+    "lab_worker_job_duration_seconds_sum":
+      algorithm: robust-quantile
+      sensitivity: 2.0
+    "lab_http_requests_total":
+      algorithm: holt-winters
+      season-length: 720
+      sensitivity: 2.5
+    "lab_worker_jobs_total":
+      algorithm: holt-winters
+      season-length: 720
+      sensitivity: 2.5
+    "metric_lab_host_cpu_usage_percent":
+      algorithm: holt-winters
+      season-length: 17280
+      sensitivity: 2.5
+    "pg_database_size_bytes":
+      algorithm: rate-of-change
+      sensitivity: 3.0
+    "redis_memory_used_bytes":
+      algorithm: rate-of-change
+      sensitivity: 2.5
+    "metric_lab_postgres_volume_usage_ratio":
+      algorithm: rate-of-change
+      sensitivity: 3.0
+
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+alerting:
+  email:
+    enabled: ${ALERT_EMAIL_ENABLED:false}
+    from: ${SMTP_USERNAME:noreply@example.com}
+    recipients: ${ALERT_RECIPIENTS:}
+    subject-prefix: "[Threshold Engine]"
+
+logging:
+  level:
+    com.monitoring.threshold: INFO
+    org.springframework.web.reactive: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

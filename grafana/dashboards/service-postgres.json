@@ -1,0 +1,216 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [
+    { "title": "App", "type": "link", "url": "/d/service-metric-lab-app/service-metric-lab-app", "keepTime": true },
+    { "title": "Worker", "type": "link", "url": "/d/service-metric-lab-worker/service-metric-lab-worker", "keepTime": true },
+    { "title": "Predictive", "type": "link", "url": "/d/service-predictive-module/service-predictive-module", "keepTime": true },
+    { "title": "Postgres", "type": "link", "url": "/d/service-postgres/service-postgres", "keepTime": true },
+    { "title": "Redis", "type": "link", "url": "/d/service-redis/service-redis", "keepTime": true },
+    { "title": "Host", "type": "link", "url": "/d/service-host/service-host", "keepTime": true }
+  ],
+  "panels": [
+    {
+      "title": "Active Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "actual" }, "properties": [{ "id": "custom.lineWidth", "value": 3 }] },
+          { "matcher": { "id": "byName", "options": "baseline" }, "properties": [{ "id": "custom.lineWidth", "value": 2 }] },
+          { "matcher": { "id": "byRegexp", "options": "^(lower|upper)$" }, "properties": [{ "id": "custom.lineWidth", "value": 1 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [6, 4] } }] },
+          { "matcher": { "id": "byName", "options": "forecast" }, "properties": [{ "id": "custom.lineWidth", "value": 2 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 6] } }, { "id": "custom.showPoints", "value": "never" }, { "id": "custom.spanNulls", "value": false }] },
+          { "matcher": { "id": "byRegexp", "options": "^f\\.(lower|upper)$" }, "properties": [{ "id": "custom.lineWidth", "value": 1 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [3, 5] } }, { "id": "custom.showPoints", "value": "never" }, { "id": "custom.spanNulls", "value": false }] }
+        ]
+      },
+      "options": {
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "sum by(datname) (pg_stat_activity_count{job=\"postgres\",state=\"active\",datname=\"metriclab\"})", "legendFormat": "actual", "interval": "15s" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_baseline_value{metric_alias=\"postgres_active_connections\"})", "legendFormat": "baseline", "interval": "15s" },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_lower_band{metric_alias=\"postgres_active_connections\"})", "legendFormat": "lower", "interval": "15s" },
+        { "refId": "D", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_upper_band{metric_alias=\"postgres_active_connections\"})", "legendFormat": "upper", "interval": "15s" },
+        { "refId": "E", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_value{metric_alias=\"postgres_active_connections\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"postgres_active_connections\"} - time()) < 15))", "legendFormat": "forecast", "interval": "15s" },
+        { "refId": "F", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_lower_band{metric_alias=\"postgres_active_connections\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"postgres_active_connections\"} - time()) < 15))", "legendFormat": "f.lower", "interval": "15s" },
+        { "refId": "G", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_upper_band{metric_alias=\"postgres_active_connections\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"postgres_active_connections\"} - time()) < 15))", "legendFormat": "f.upper", "interval": "15s" }
+      ]
+    },
+    {
+      "title": "Transaction Rate (commits/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 0, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } },
+          "unit": "ops"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "actual" }, "properties": [{ "id": "custom.lineWidth", "value": 3 }] },
+          { "matcher": { "id": "byName", "options": "baseline" }, "properties": [{ "id": "custom.lineWidth", "value": 2 }] },
+          { "matcher": { "id": "byRegexp", "options": "^(lower|upper)$" }, "properties": [{ "id": "custom.lineWidth", "value": 1 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [6, 4] } }] },
+          { "matcher": { "id": "byName", "options": "forecast" }, "properties": [{ "id": "custom.lineWidth", "value": 2 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 6] } }, { "id": "custom.showPoints", "value": "never" }, { "id": "custom.spanNulls", "value": false }] },
+          { "matcher": { "id": "byRegexp", "options": "^f\\.(lower|upper)$" }, "properties": [{ "id": "custom.lineWidth", "value": 1 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [3, 5] } }, { "id": "custom.showPoints", "value": "never" }, { "id": "custom.spanNulls", "value": false }] }
+        ]
+      },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "sum by(datname) (rate(pg_stat_database_xact_commit{job=\"postgres\",datname=\"metriclab\"}[3m]))", "legendFormat": "actual", "interval": "15s" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_baseline_value{metric_alias=\"postgres_transaction_rate\"})", "legendFormat": "baseline", "interval": "15s" },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_lower_band{metric_alias=\"postgres_transaction_rate\"})", "legendFormat": "lower", "interval": "15s" },
+        { "refId": "D", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_upper_band{metric_alias=\"postgres_transaction_rate\"})", "legendFormat": "upper", "interval": "15s" },
+        { "refId": "E", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_value{metric_alias=\"postgres_transaction_rate\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"postgres_transaction_rate\"} - time()) < 15))", "legendFormat": "forecast", "interval": "15s" },
+        { "refId": "F", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_lower_band{metric_alias=\"postgres_transaction_rate\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"postgres_transaction_rate\"} - time()) < 15))", "legendFormat": "f.lower", "interval": "15s" },
+        { "refId": "G", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_upper_band{metric_alias=\"postgres_transaction_rate\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"postgres_transaction_rate\"} - time()) < 15))", "legendFormat": "f.upper", "interval": "15s" }
+      ]
+    },
+    {
+      "title": "Volume Usage %",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 9 },
+      "id": 3,
+      "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 0, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } },
+          "unit": "percent"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "actual" }, "properties": [{ "id": "custom.lineWidth", "value": 3 }] },
+          { "matcher": { "id": "byName", "options": "baseline" }, "properties": [{ "id": "custom.lineWidth", "value": 2 }] },
+          { "matcher": { "id": "byRegexp", "options": "^(lower|upper)$" }, "properties": [{ "id": "custom.lineWidth", "value": 1 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [6, 4] } }] },
+          { "matcher": { "id": "byName", "options": "forecast" }, "properties": [{ "id": "custom.lineWidth", "value": 2 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 6] } }, { "id": "custom.showPoints", "value": "never" }, { "id": "custom.spanNulls", "value": false }] },
+          { "matcher": { "id": "byRegexp", "options": "^f\\.(lower|upper)$" }, "properties": [{ "id": "custom.lineWidth", "value": 1 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [3, 5] } }, { "id": "custom.showPoints", "value": "never" }, { "id": "custom.spanNulls", "value": false }] }
+        ]
+      },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "metric_lab_postgres_volume_usage_ratio{job=\"metric-lab-host\"} * 100", "legendFormat": "actual", "interval": "15s" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_baseline_value{metric_alias=\"postgres_volume_usage_percent\"})", "legendFormat": "baseline", "interval": "15s" },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_lower_band{metric_alias=\"postgres_volume_usage_percent\"})", "legendFormat": "lower", "interval": "15s" },
+        { "refId": "D", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_upper_band{metric_alias=\"postgres_volume_usage_percent\"})", "legendFormat": "upper", "interval": "15s" },
+        { "refId": "E", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_value{metric_alias=\"postgres_volume_usage_percent\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"postgres_volume_usage_percent\"} - time()) < 15))", "legendFormat": "forecast", "interval": "15s" },
+        { "refId": "F", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_lower_band{metric_alias=\"postgres_volume_usage_percent\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"postgres_volume_usage_percent\"} - time()) < 15))", "legendFormat": "f.lower", "interval": "15s" },
+        { "refId": "G", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_upper_band{metric_alias=\"postgres_volume_usage_percent\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"postgres_volume_usage_percent\"} - time()) < 15))", "legendFormat": "f.upper", "interval": "15s" }
+      ]
+    },
+    {
+      "title": "Container CPU %",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 9 },
+      "id": 4,
+      "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 0, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } },
+          "unit": "percent"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "actual" }, "properties": [{ "id": "custom.lineWidth", "value": 3 }] },
+          { "matcher": { "id": "byName", "options": "baseline" }, "properties": [{ "id": "custom.lineWidth", "value": 2 }] },
+          { "matcher": { "id": "byRegexp", "options": "^(lower|upper)$" }, "properties": [{ "id": "custom.lineWidth", "value": 1 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [6, 4] } }] },
+          { "matcher": { "id": "byName", "options": "forecast" }, "properties": [{ "id": "custom.lineWidth", "value": 2 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 6] } }, { "id": "custom.showPoints", "value": "never" }, { "id": "custom.spanNulls", "value": false }] },
+          { "matcher": { "id": "byRegexp", "options": "^f\\.(lower|upper)$" }, "properties": [{ "id": "custom.lineWidth", "value": 1 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [3, 5] } }, { "id": "custom.showPoints", "value": "never" }, { "id": "custom.spanNulls", "value": false }] }
+        ]
+      },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "metric_lab_container_cpu_usage_percent{service=\"postgres\"}", "legendFormat": "actual", "interval": "15s" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_baseline_value{metric_alias=\"container_cpu_usage_percent\",source_service=\"postgres\"})", "legendFormat": "baseline", "interval": "15s" },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_lower_band{metric_alias=\"container_cpu_usage_percent\",source_service=\"postgres\"})", "legendFormat": "lower", "interval": "15s" },
+        { "refId": "D", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_upper_band{metric_alias=\"container_cpu_usage_percent\",source_service=\"postgres\"})", "legendFormat": "upper", "interval": "15s" },
+        { "refId": "E", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_value{metric_alias=\"container_cpu_usage_percent\",source_service=\"postgres\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"container_cpu_usage_percent\",source_service=\"postgres\"} - time()) < 15))", "legendFormat": "forecast", "interval": "15s" },
+        { "refId": "F", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_lower_band{metric_alias=\"container_cpu_usage_percent\",source_service=\"postgres\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"container_cpu_usage_percent\",source_service=\"postgres\"} - time()) < 15))", "legendFormat": "f.lower", "interval": "15s" },
+        { "refId": "G", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_upper_band{metric_alias=\"container_cpu_usage_percent\",source_service=\"postgres\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"container_cpu_usage_percent\",source_service=\"postgres\"} - time()) < 15))", "legendFormat": "f.upper", "interval": "15s" }
+      ]
+    },
+    {
+      "title": "Container Memory",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 18 },
+      "id": 5,
+      "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 0, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } },
+          "unit": "bytes"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "actual" }, "properties": [{ "id": "custom.lineWidth", "value": 3 }] },
+          { "matcher": { "id": "byName", "options": "baseline" }, "properties": [{ "id": "custom.lineWidth", "value": 2 }] },
+          { "matcher": { "id": "byRegexp", "options": "^(lower|upper)$" }, "properties": [{ "id": "custom.lineWidth", "value": 1 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [6, 4] } }] },
+          { "matcher": { "id": "byName", "options": "forecast" }, "properties": [{ "id": "custom.lineWidth", "value": 2 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 6] } }, { "id": "custom.showPoints", "value": "never" }, { "id": "custom.spanNulls", "value": false }] },
+          { "matcher": { "id": "byRegexp", "options": "^f\\.(lower|upper)$" }, "properties": [{ "id": "custom.lineWidth", "value": 1 }, { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [3, 5] } }, { "id": "custom.showPoints", "value": "never" }, { "id": "custom.spanNulls", "value": false }] }
+        ]
+      },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "metric_lab_container_memory_usage_bytes{service=\"postgres\"}", "legendFormat": "actual", "interval": "15s" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_baseline_value{metric_alias=\"container_memory_usage_bytes\",source_service=\"postgres\"})", "legendFormat": "baseline", "interval": "15s" },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_lower_band{metric_alias=\"container_memory_usage_bytes\",source_service=\"postgres\"})", "legendFormat": "lower", "interval": "15s" },
+        { "refId": "D", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_upper_band{metric_alias=\"container_memory_usage_bytes\",source_service=\"postgres\"})", "legendFormat": "upper", "interval": "15s" },
+        { "refId": "E", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_value{metric_alias=\"container_memory_usage_bytes\",source_service=\"postgres\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"container_memory_usage_bytes\",source_service=\"postgres\"} - time()) < 15))", "legendFormat": "forecast", "interval": "15s" },
+        { "refId": "F", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_lower_band{metric_alias=\"container_memory_usage_bytes\",source_service=\"postgres\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"container_memory_usage_bytes\",source_service=\"postgres\"} - time()) < 15))", "legendFormat": "f.lower", "interval": "15s" },
+        { "refId": "G", "datasource": { "type": "prometheus", "uid": "prometheus-metric-lab" }, "expr": "max by (series_id) (predictive_forecast_upper_band{metric_alias=\"container_memory_usage_bytes\",source_service=\"postgres\"} and on (app,analysis_mode,fallback_used,metric_alias,model_name,series_id,source_container,source_drive,source_endpoint,source_host,source_instance,source_job,source_job_type,source_service,horizon_step) (abs(predictive_forecast_timestamp_seconds{metric_alias=\"container_memory_usage_bytes\",source_service=\"postgres\"} - time()) < 15))", "legendFormat": "f.upper", "interval": "15s" }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["metric-lab", "predictive"],
+  "templating": { "list": [] },
+  "time": { "from": "now-3h", "to": "now+5m" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Service - postgres",
+  "uid": "service-postgres",
+  "version": 1
+}

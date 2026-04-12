@@ -1,0 +1,199 @@
+networks:
+  metric_lab:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: metriclab
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lab -d metriclab"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - metric_lab
+
+  redis:
+    image: redis:7.2-alpine
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1000"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - metric_lab
+
+  metric-lab-app:
+    build:
+      context: ./app
+    environment:
+      SERVICE_NAME: metric-lab-app
+      POSTGRES_DSN: postgresql://lab:lab@postgres:5432/metriclab
+      REDIS_URL: redis://redis:6379/0
+      APP_PORT: "8000"
+      SESSION_TTL_SECONDS: "900"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - metric_lab
+
+  metric-lab-worker:
+    build:
+      context: ./app
+    command: ["python", "main.py", "worker"]
+    environment:
+      SERVICE_NAME: metric-lab-worker
+      POSTGRES_DSN: postgresql://lab:lab@postgres:5432/metriclab
+      REDIS_URL: redis://redis:6379/0
+      METRICS_PORT: "9108"
+      SESSION_TTL_SECONDS: "900"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "9108:9108"
+    restart: unless-stopped
+    networks:
+      - metric_lab
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.61.0
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "9121:9121"
+    restart: unless-stopped
+    networks:
+      - metric_lab
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      DATA_SOURCE_NAME: postgresql://lab:lab@postgres:5432/metriclab?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "9187:9187"
+    restart: unless-stopped
+    networks:
+      - metric_lab
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=60d"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus-vps.yml:/etc/prometheus/prometheus.yml:ro
+      - ./data/prometheus:/prometheus
+    restart: unless-stopped
+    networks:
+      - metric_lab
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: "http://217.26.28.183:3000"
+      GF_UNIFIED_ALERTING_ENABLED: "true"
+      GF_ALERTING_ENABLED: "false"
+      GF_SMTP_ENABLED: "true"
+      GF_SMTP_HOST: "smtp.gmail.com:587"
+      GF_SMTP_USER: ""
+      GF_SMTP_PASSWORD: ""
+      GF_SMTP_FROM_ADDRESS: "grafana@predictive-telemetry.local"
+      GF_SMTP_FROM_NAME: "Predictive Telemetry Alerts"
+    depends_on:
+      prometheus:
+        condition: service_started
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    restart: unless-stopped
+    networks:
+      - metric_lab
+
+  locust:
+    image: locustio/locust:2.24.1
+    command:
+      - "-f"
+      - "/mnt/locust/locustfile.py"
+      - "--host=http://metric-lab-app:8000"
+      - "--headless"
+      - "--users=12"
+      - "--spawn-rate=3"
+      - "--stop-timeout=60"
+    depends_on:
+      metric-lab-app:
+        condition: service_healthy
+    volumes:
+      - ./locust/locustfile.py:/mnt/locust/locustfile.py:ro
+      - ./app/scenario.py:/mnt/locust/scenario.py:ro
+    restart: unless-stopped
+    networks:
+      - metric_lab
+
+  host-exporter-linux:
+    build:
+      context: ./host-exporter-linux
+    environment:
+      HOST_HOSTNAME: vps
+      POSTGRES_DATA_PATH: /host-fs/opt/metric-lab/data/postgres
+    volumes:
+      - /proc:/host-fs/proc:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/metric-lab/data/postgres:/host-fs/opt/metric-lab/data/postgres:ro
+    ports:
+      - "9422:9422"
+    restart: unless-stopped
+    networks:
+      - metric_lab

@@ -1,0 +1,208 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: email-alerts
+    receivers:
+      - uid: email-contact
+        type: email
+        settings:
+          addresses: admin@localhost
+          singleEmail: true
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: email-alerts
+    group_by:
+      - grafana_folder
+      - alertname
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+
+groups:
+  - orgId: 1
+    name: predictive-telemetry-alerts
+    folder: Predictive Alerts
+    interval: 1m
+    rules:
+      - uid: alert-severity-critical
+        title: "Critical Alert Detected"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: prometheus-metric-lab
+            model:
+              expr: "predictive_alert_severity{app=\"predictive-telemetry-module\"}"
+              instant: true
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: max
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 2.5
+              refId: C
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical alert detected — a metric has reached or is predicted to reach its critical threshold"
+        noDataState: OK
+        execErrState: Error
+
+      - uid: alert-severity-warning
+        title: "Predictive Warning"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: prometheus-metric-lab
+            model:
+              expr: "predictive_alert_severity{app=\"predictive-telemetry-module\"}"
+              instant: true
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: max
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 1.5
+              refId: C
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Predictive warning — a metric is trending toward a critical threshold or has sustained anomaly"
+        noDataState: OK
+        execErrState: Error
+
+      - uid: alert-breach-probability
+        title: "High Breach Probability"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: prometheus-metric-lab
+            model:
+              expr: "predictive_breach_probability{app=\"predictive-telemetry-module\"}"
+              instant: true
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: max
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 0.4
+              refId: C
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Breach probability exceeds 40% — forecast envelope is approaching critical threshold"
+        noDataState: OK
+        execErrState: Error
+
+      - uid: alert-cumulative-offset
+        title: "Sustained Anomaly Offset"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus-metric-lab
+            model:
+              expr: "avg_over_time(predictive_anomaly_offset{app=\"predictive-telemetry-module\"}[10m])"
+              instant: true
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: max
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 5
+              refId: C
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sustained anomaly — average offset over 10 minutes exceeds threshold"
+        noDataState: OK
+        execErrState: Error
