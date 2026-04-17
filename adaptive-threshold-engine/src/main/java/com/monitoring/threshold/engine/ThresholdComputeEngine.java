@@ -223,16 +223,20 @@ public class ThresholdComputeEngine {
 
         ThresholdResult rawResult = algorithm.compute(cleanData, sensitivity);
 
-        DriftResult drift = OutlierFilter.detectDrift(dataPoints);
-        if (drift.isUpwardDrift()) {
-            double baselineUpper = drift.baselineMedian()
+        boolean skipDriftGuard = "rate-of-change".equals(rawResult.algorithmName());
+
+        if (!skipDriftGuard){
+            DriftResult drift = OutlierFilter.detectDrift(dataPoints);
+            if (drift.isUpwardDrift()) {
+                double baselineUpper = drift.baselineMedian()
                     + sensitivity * (rawResult.upper() - rawResult.midline());
-            double adjustedUpper = Math.min(rawResult.upper(), baselineUpper);
-            rawResult = new ThresholdResult(adjustedUpper, rawResult.lower(),
+                double adjustedUpper = Math.min(rawResult.upper(), baselineUpper);
+                rawResult = new ThresholdResult(adjustedUpper, rawResult.lower(),
                     rawResult.midline(), rawResult.algorithmName() + "+drift-guard");
-            log.debug("Drift guard active for '{}': baseline={}, recent={}, magnitude={}σ",
+                log.debug("Drift guard active for '{}': baseline={}, recent={}, magnitude={}σ",
                     metricKey, drift.baselineMedian(), drift.recentMedian(),
                     String.format("%.1f", drift.driftMagnitude()));
+            }
         }
 
         double bandWidth = rawResult.upper() - rawResult.lower();
