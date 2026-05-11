@@ -3,7 +3,7 @@ CREATE TABLE feedback_adjustments (
     metric_name      VARCHAR(255)     NOT NULL,
     old_sensitivity  DOUBLE PRECISION NOT NULL,
     new_sensitivity  DOUBLE PRECISION NOT NULL,
-    fpr_at_time      DOUBLE PRECISION NOT NULL,
+    fdr_at_time      DOUBLE PRECISION NOT NULL,
     tp_count         INT              NOT NULL,
     fp_count         INT              NOT NULL,
     ex_count         INT              NOT NULL,

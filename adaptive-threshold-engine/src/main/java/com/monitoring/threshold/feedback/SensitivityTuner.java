@@ -25,8 +25,8 @@ public class SensitivityTuner {
     private static final double ADJUSTMENT_STEP = 0.25;
     private static final double MIN_SENSITIVITY = 1.5;
     private static final double MAX_SENSITIVITY = 5.0;
-    private static final double FPR_UPPER = 0.50;
-    private static final double FPR_LOWER = 0.15;
+    private static final double FDR_UPPER = 0.50;
+    private static final double FDR_LOWER = 0.15;
 
     private final AnomalyRepository anomalyRepo;
     private final FeedbackAdjustmentRepository adjustmentRepo;
@@ -60,7 +60,7 @@ public class SensitivityTuner {
             return Optional.empty();
         }
 
-        double fpr = (double) fp / (tp + fp);
+        double fdr = (double) fp / (tp + fp);
 
         ThresholdEngineProperties.MetricOverride override = properties.getMetrics().get(metricName);
         double currentSensitivity = (override != null && override.getSensitivity() != null)
@@ -70,10 +70,10 @@ public class SensitivityTuner {
         double newSensitivity;
         String direction;
 
-        if (fpr > FPR_UPPER) {
+        if (fdr > FDR_UPPER) {
             newSensitivity = currentSensitivity + ADJUSTMENT_STEP;
             direction = "WIDEN";
-        } else if (fpr < FPR_LOWER && currentSensitivity > MIN_SENSITIVITY) {
+        } else if (fdr < FDR_LOWER && currentSensitivity > MIN_SENSITIVITY) {
             newSensitivity = currentSensitivity - (ADJUSTMENT_STEP / 2.0);
             direction = "TIGHTEN";
         } else {
@@ -86,16 +86,16 @@ public class SensitivityTuner {
         }
 
         engine.updateMetricConfig(metricName, null, newSensitivity);
-        adjustmentRepo.save(metricName, currentSensitivity, newSensitivity, fpr, tp, fp, ex, direction);
+        adjustmentRepo.save(metricName, currentSensitivity, newSensitivity, fdr, tp, fp, ex, direction);
 
-        log.info("Adjusted sensitivity for '{}': {} -> {} (FPR={}, direction={})",
+        log.info("Adjusted sensitivity for '{}': {} -> {} (FDR={}, direction={})",
                 metricName, currentSensitivity, newSensitivity,
-                String.format("%.2f", fpr), direction);
+                String.format("%.2f", fdr), direction);
 
-        return Optional.of(new AdjustmentResult(metricName, currentSensitivity, newSensitivity, fpr, direction));
+        return Optional.of(new AdjustmentResult(metricName, currentSensitivity, newSensitivity, fdr, direction));
     }
 
     public record AdjustmentResult(String metricName, double oldSensitivity,
-                                    double newSensitivity, double fpr, String direction) {
+                                    double newSensitivity, double fdr, String direction) {
     }
 }

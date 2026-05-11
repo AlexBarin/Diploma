@@ -130,7 +130,7 @@ public class FeedbackController {
                 case "EXPECTED" -> ex++;
             }
         }
-        double fpr = (tp + fp) > 0 ? (double) fp / (tp + fp) : 0.0;
+        double fdr = (tp + fp) > 0 ? (double) fp / (tp + fp) : 0.0;
 
         ThresholdEngineProperties.MetricOverride override = properties.getMetrics().get(metricName);
         double sensitivity = (override != null && override.getSensitivity() != null)
@@ -143,7 +143,7 @@ public class FeedbackController {
                 "falsePositives", fp,
                 "expected", ex,
                 "totalLabeled", tp + fp + ex,
-                "falsePositiveRatio", fpr,
+                "falseDiscoveryRate", fdr,
                 "currentSensitivity", sensitivity);
     }
 }

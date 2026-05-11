@@ -17,13 +17,13 @@ public class FeedbackAdjustmentRepository {
     }
 
     public void save(String metricName, double oldSensitivity, double newSensitivity,
-                     double fpr, int tp, int fp, int ex, String direction) {
+                     double fdr, int tp, int fp, int ex, String direction) {
         jdbc.update("""
                 INSERT INTO feedback_adjustments
-                (metric_name, old_sensitivity, new_sensitivity, fpr_at_time, tp_count, fp_count, ex_count, direction)
+                (metric_name, old_sensitivity, new_sensitivity, fdr_at_time, tp_count, fp_count, ex_count, direction)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                metricName, oldSensitivity, newSensitivity, fpr, tp, fp, ex, direction);
+                metricName, oldSensitivity, newSensitivity, fdr, tp, fp, ex, direction);
     }
 
     public List<AdjustmentRow> findAll() {
@@ -34,7 +34,7 @@ public class FeedbackAdjustmentRepository {
                         rs.getString("metric_name"),
                         rs.getDouble("old_sensitivity"),
                         rs.getDouble("new_sensitivity"),
-                        rs.getDouble("fpr_at_time"),
+                        rs.getDouble("fdr_at_time"),
                         rs.getInt("tp_count"),
                         rs.getInt("fp_count"),
                         rs.getInt("ex_count"),
@@ -43,7 +43,7 @@ public class FeedbackAdjustmentRepository {
     }
 
     public record AdjustmentRow(long id, String metricName, double oldSensitivity,
-                                 double newSensitivity, double fpr,
+                                 double newSensitivity, double fdr,
                                  int tp, int fp, int ex, String direction,
                                  java.time.Instant adjustedAt) {
     }
